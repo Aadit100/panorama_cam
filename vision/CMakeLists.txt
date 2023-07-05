@@ -67,10 +67,9 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  sensor_msgs
-)
+# generate_messages(
+#  DEPENDENCIES
+# )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -104,7 +103,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES vision
-  CATKIN_DEPENDS rospy sensor_msgs
+  CATKIN_DEPENDS rospy
 #  DEPENDS system_lib
 )
 
