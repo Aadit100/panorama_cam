@@ -1,6 +1,0 @@
-<launch>
-
-<node name="webcam" pkg="vision" type="test_camera.py" output="screen"/>
-<node name="node_check" pkg="vision" type="node_check_alive.py"/>
-
-</launch>
