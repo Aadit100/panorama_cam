@@ -1,0 +1,5 @@
+<launch>
+
+<node name="node_check" pkg="vision" type="node_check_alive1.py"/>
+
+</launch>
