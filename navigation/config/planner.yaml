@@ -1,0 +1,5 @@
+planner/dist_tolerance: 0.5
+planner/bearing_tolerance: 4.0
+planner/forward_max: 40.0
+planner/forward_min: 25.0
+planner/forward_mult: 1.0
