@@ -17,13 +17,13 @@ class Plan():
 
         #Subscriber
         try:
-            rospy.Subscriber("feedback",enc_feed,self.feedCallback)
+            rospy.Subscriber("feedback",enc_feed,self.feedCallback)  #enc feed is message which will provide vel and angle of motor
         except Exception(e):
             print(e)
 
         #Publisher
-        self.pub_control=rospy.Publisher("control",Int16,queue_size=10)
-        self.pub_planner_state=rospy.Publisher("planner_state",Planner_state,queue_size=2)
+        self.pub_control=rospy.Publisher("control",Int16,queue_size=10)  #this provides the control input
+        self.pub_planner_state=rospy.Publisher("planner_state",Planner_state,queue_size=2)  #tells us if the goal has been reached or not with 0 or 1
 
     def spin(self):
         rate=rospy.Rate(25)
@@ -32,12 +32,12 @@ class Plan():
             rate.sleep()
 
     def main(self):
-        if(self.state=="pos"):
+        if(self.state=="pos"):  #for different states of control there will be minor changes in control procedure
             if(abs(self.angle_dest-self.angle)>self.angle_tolerance):
-                self.pub_planner_state.publish(0)
+                self.pub_planner_state.publish(0)  #has not reached destination
                 remainAngle=self.angle_dest-self.angle
                 
-                if remainAngle>180:
+                if remainAngle>180:   #changes the way/direction the motor should move in depending on the goal angle
                     remainAngle=remainAngle-360
                 elif remainAngle<-180:
                     remainAngle=remainAngle+360
@@ -52,7 +52,7 @@ class Plan():
         elif(self.state=="vel"):
             if(abs(self.vel_target-self.vel)>self.vel_tolerance):
                 self.pub_planner_state.publish(0)
-                error=self.vel_target_self.vel
+                error=self.vel_target-self.vel
                 self.control=self.output(error)
                 self.control_pub()
             else:
@@ -62,31 +62,31 @@ class Plan():
         elif(self.state=="stop"):
             self.control=0
             self.control_pub()
-            self.pub_planner_state.publish(0)
+            self.pub_planner_state.publish(0)  #also publishes 0 when we've just set it to stop
 
     
-    def output(self,error):
+    def output(self,error):  #this function carries out the pid control
         tim=rospy.get_time() #gets current time
         dt=tim-self.time_prev #compares and gets the time difference b/w previous and current time
 
-        if(self.time_prev==0):
+        if(self.time_prev==0): #if this is first iteration then set dt as 0
             dt=0
 
         if(dt!=0):
             output_d=((error-self.error_prev)/dt)*self.kd
             output_p=error*self.kp
         else:
-            output_d=0
+            output_d=0   #if dt=0 then just give both outputs as 0
             output_p=0
-        self.error_int += error*dt
+        self.error_int += error*dt   #this is the integrated error
         output_i=self.error_int*self.ki
         output=(output_p+output_d+output_i)  #see whether it is +ve or -ve
 
         self.time_prev=tim
         self.error_prev=error
-
+        print(output)
         if output>0:
-            output=min(127,output)
+            output=min(127,output)  #so that the maximum output isn't more than 127(half maximum voltage) #this may need changing
         else:
             output=max(-127,output)
 
@@ -102,11 +102,11 @@ class Plan():
         self.vel_tolerance=float(4)
         self.kp=1
         self.ki=0
-        self.kd=0.5
+        self.kd=0.1
 
     def load_vars(self):
         self.state="pos" #states are 'pos','vel','stop'
-        self.angle_dest=-170
+        self.angle_dest=20
         self.angle=0
         self.vel_target=30
         self.vel=0

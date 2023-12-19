@@ -75,11 +75,11 @@ class drive():
 		if(user_input.active_input == 0):
 			self.active_input = user_input.active_input
 			return user_inputResponse("joystick control active")
-			print ("control handed over to joystick\n")
+
 		elif(user_input.active_input == 1):
 			self.active_input = user_input.active_input
 			return user_inputResponse("autonomous control active")
-			print ("autonomous control active\n")
+
 		else:
 			return user_inputResponse("invalid input")
 

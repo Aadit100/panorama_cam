@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rospy
 from std_msgs.msg import String
+from std_msgs.msg import Float32
 from navigation.msg import gps_data
 import math
 from time import *
@@ -39,12 +40,17 @@ def haversine(lat1, lon1, lat2, lon2):
 
 def gps_listener():
     global current_latitude,current_longitude,previous_latitude,previous_longitude,iter,start_time
+    pub = rospy.Publisher('gps_pub', Float32, queue_size=10)
     while not rospy.is_shutdown():
         rospy.Subscriber("gps_coordinates",gps_data , gps_callback)
         if (previous_latitude != 0) and (previous_longitude != 0):
             # Calculate the distance using the Haversine formula
             distance = haversine(current_latitude, current_longitude, previous_latitude, previous_longitude)
             rospy.loginfo("Distance to Previous Location: {:.4f} km".format(distance))
+            msg_pub = Float32()
+            msg_pub.data = distance
+            pub.publish(msg_pub)
+
 
         # Update the previous location
         if(iter==0):
