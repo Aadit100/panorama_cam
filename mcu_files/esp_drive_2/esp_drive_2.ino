@@ -25,7 +25,7 @@ bool hb = false;
 #define PWMl2 17
 
 #define DIRr3 23
-#define DIRl3 13
+#define DIRl3 27
 #define PWMr3 22
 #define PWMl3 21
 //int panAngle = 0;
@@ -104,6 +104,11 @@ void loop() {
   nh.spinOnce();
   vel=vel1-127;
   omega=om-127;
+
+  int temp=vel;
+  vel=omega;
+  omega=temp;
+  
   pwmr = int(vel+omega);
   pwml = int(vel-omega); 
 

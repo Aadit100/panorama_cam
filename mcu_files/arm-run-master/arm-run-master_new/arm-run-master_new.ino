@@ -96,7 +96,6 @@ void loop () {
   writeMotors();
   if (curr_time - last_write_time > WRITE_INTERVAL)
   {
-    
     writeCanBus();
     last_write_time = curr_time;
     Serial.println("sending");
@@ -209,9 +208,9 @@ void initCAN () {
   CAN.setMode(MCP_NORMAL);   // Change to normal mode to allow messages to be transmitted
   digitalWrite (LED, HIGH);
   delay(1000);
-   digitalWrite (LED, LOW);
-   delay(1000);
-    digitalWrite (LED, HIGH);
+  digitalWrite (LED, LOW);
+  delay(1000);
+  digitalWrite (LED, HIGH);
     
   
 }

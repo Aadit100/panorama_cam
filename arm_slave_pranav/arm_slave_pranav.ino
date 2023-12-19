@@ -7,14 +7,15 @@
 #include <mcp_can.h>
 #include <SPI.h>
 
-#define SPI_CS_PIN 1  //the pico has cs(chip select) pin as 17
+#define SPI_CS_PIN 1
+
 MCP_CAN CAN (SPI_CS_PIN);
 
+long unsigned int rxID;
 
-#define LED 25  //onboard led
-
-#define PWM1 7  //these are the pins for the dual channel motor drivers for the 4 motors pico controls
-#define INB1 6 //#
+#define LED 25
+#define PWM1 7
+#define INB1 6
 #define INA1 5
 #define EN1  4
 
@@ -28,80 +29,84 @@ MCP_CAN CAN (SPI_CS_PIN);
 #define INA3 14
 #define EN3  15
 
-#define PWM4 18 //#
-#define INB4 19 //#
+#define PWM4 18
+#define INB4 19
 #define INA4 20
 #define EN4  21
-//#define CAN_INT 22
 
 
-#define PWMMAX 0xFFF  //max precision is 4095
 
-void initAndClearOutputs ();  //similar to arm master to initialize the pins
+#define PWMMAX 0xFFF
+
+void initAndClearOutputs ();
 void fixPWM ();
 void initCAN ();
-void updatePinBuff ();  //updates the buffer
+void updatePinBuff ();
 void writeMotors ();
 
 // for CAN
 #define STD_FRAME 0
-unsigned long SELF_ID = 0xF1;
+const unsigned long SELF_ID = 0xF1;
 
 #define LOST_COMM_INTERVAL 2000
-unsigned long last_comm_time = 0;   //similar to arm master
+unsigned long last_comm_time = 0;
 unsigned long curr_time = 0;
 
 // PWM, EN, INA, INB (in that order)
-uint8_t buff[16] = {0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0,0,0,0,0};  //we need 4 inputs for 4 motors so 16 values in total
+uint8_t buff[16] = {0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0,0,0,0,0};
 
 void setup () {
   //fixPWM ();
-  
+  SPI.setRX(0);
+   SPI.setTX(3);
+   SPI.setSCK(2);
+    SPI.setCS(1);
   writeMotors();
   initAndClearOutputs ();
   initCAN();
 
   curr_time = millis();
-  last_comm_time = curr_time; //updating last comm time
+  last_comm_time = curr_time;
+  CAN.setMode(MCP_NORMAL);
 }
 
 void loop () {
-  //Serial.println("received");  //to see if message received
   curr_time = millis();
-  if (CAN_MSGAVAIL == CAN.checkReceive())
-  //if(!digitalRead(CAN_INT))
-  {
-    Serial.println("received");  //to see if message received
-    unsigned char len; 
+
+    
+    unsigned char len;
     unsigned char tmp[8];
-    CAN.readMsgBuf (&SELF_ID,&len, tmp); //gives the length of the message along with the buffer
-    if (CAN.checkReceive())//CAN.getCanId() == SELF_ID)  //checking if the id on the message is same as the id of the pico
+    CAN.readMsgBuf (&rxID,&len, tmp);
+    Serial.println(rxID);
+    Serial.println(SELF_ID);
+    if (rxID == SELF_ID)
     {
+      Serial.println("received");
       for (int i = 0; i < 4; i++)
-        buff[4*i] = tmp[i];  //the pwm values are stored at every 4 intervals for each motor like stored in the 2 motors of master
+        buff[4*i] = tmp[i];
 
        for (int i=4;i<8;i++)
        {
-        buff[4*(i-4)+1] = tmp[i]&1;  //converting this back to pwms, ina and inb. genius!!!
+        buff[4*(i-4)+1] = tmp[i]&1;
         buff[4*(i-4)+2] = (tmp[i]>>1)&1;
         buff[4*(i-4)+3] = (tmp[i]>>2)&1;
         
        }
-      last_comm_time = curr_time;
       digitalWrite (LED, HIGH);
+      last_comm_time = curr_time;
     }
-    last_comm_time = curr_time; //updating last comm time
-  }
+    
+ 
   
   if (curr_time - last_comm_time > LOST_COMM_INTERVAL)
   {
     for (int i = 0; i < 16; i++)
-      buff[i] = 0;  //if no communication has occured then stop the motors
+      buff[i] = 0;
     last_comm_time = curr_time;
     digitalWrite (LED, LOW);
   }
 
-  writeMotors(); //write the values to motors
+  writeMotors();
 }
 
 
@@ -109,27 +114,27 @@ void loop () {
 
 void writeMotors () {
 
-  analogWriteResolution(12); //with precision from 0 to 4095
+  analogWriteResolution(12);
   
 
 
 
   
   // motor_buff in this order: pwm, en, ina, inb
-  analogWrite (PWM1,    (buff[0]*0xFFF)/0xFF);  //just writing the values you get in buffer to motor drivers
-  digitalWrite (EN1,  buff[1]);
-  digitalWrite (INA1, buff[3]);
-  digitalWrite (INB1, buff[2]);
+  analogWrite (PWM1,    (buff[0]*0xFFF)/0xFF);
+  digitalWrite (EN1,  HIGH);// buff[1]);
+  digitalWrite (INA1, buff[2]);
+  digitalWrite (INB1, buff[3]);
   analogWrite (PWM2,    (buff[4]*0xFFF)/0xFF);
-  digitalWrite (EN2,  buff[5]);
+  digitalWrite (EN2, HIGH);// buff[5]);
   digitalWrite (INA2, buff[6]);
   digitalWrite (INB2, buff[7]);
   analogWrite (PWM3,    (buff[8]*0xFFF)/0xFF);
-  digitalWrite (EN3,  buff[9]);
+  digitalWrite (EN3,  HIGH);//buff[9]);
   digitalWrite (INA3, buff[10]);
   digitalWrite (INB3, buff[11]);
-  digitalWrite (PWM4, buff[13]);
-  analogWrite (EN4,    (buff[12]*0xFFD)/0xFF); //this may be switched between en and pwm
+  digitalWrite (EN4, HIGH);//buff[13]);
+  analogWrite (PWM4,    (buff[12]*0xFFF)/0xFF);
   digitalWrite (INA4, buff[15]);
   digitalWrite (INB4, buff[14]);
 }
@@ -140,25 +145,25 @@ void writeMotors () {
   //timer.refresh();
 }*/
 
-void initCAN () {   //to initially check if can communication is established
+void initCAN () {
   Serial.begin(500000);
   digitalWrite (LED, LOW);
 
-  while (CAN_OK != CAN.begin(MCP_ANY,CAN_500KBPS,MCP_16MHZ))
+  while (CAN_OK != CAN.begin(MCP_ANY, CAN_500KBPS, MCP_16MHZ))
   {
       digitalWrite (LED, HIGH);
       delay (500);
       digitalWrite (LED, LOW);
       delay (500);
   }
-  CAN.setMode(MCP_NORMAL);
+  
   digitalWrite (LED, HIGH);
   delay(1000);
   digitalWrite (LED, LOW);
   delay(1000);
   digitalWrite (LED, HIGH);
   delay(1000);
-  Serial.println("CAN Working");  //verification is led blinking and message receiving
+  Serial.println("CAN Working");
   delay(500);
 }
 
@@ -201,6 +206,4 @@ void initAndClearOutputs () {
   digitalWrite (INB4, HIGH);
   digitalWrite (INA4, HIGH);
   analogWrite (EN4, PWMMAX);
-
-  //pinMode(CAN_INT, INPUT);
 }
