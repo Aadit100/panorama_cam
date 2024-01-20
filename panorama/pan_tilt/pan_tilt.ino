@@ -5,8 +5,8 @@
 ros::NodeHandle nh;
 Servo servo1;  //pan motor
 Servo servo2;  //tilt motor
-int servoPin1=4;  //attach pan motor to pin4
-int servoPin2=0;  //attach tilt motor to pin0
+int servoPin1=4;  //attach pan motor to pin32
+int servoPin2=0;  //attach tilt motor to pin33
 int init_pan=96;
 int init_tilt=95;
 int val1=init_pan;  //this is for pan motor so this is the value where it does not rotate
@@ -28,6 +28,13 @@ ros::Publisher check("check",&cam_state);
 void joyCallback(const sensor_msgs::Joy& msg){
   feed1=msg.axes[6];  //we will have to change these axes according to what we want to map them to
   feed2=msg.axes[7];
+  if(msg.buttons[4]){
+  flag=(not flag);
+    if(flag){
+      it=0;
+      prev_time=curr_time;
+    }
+  }
 }
 
 void pantilt(){
@@ -59,12 +66,6 @@ void pantilt(){
   }
 }
 
-void isr(){
-  flag=(not flag);
-  i=0;
-  prev_time=curr_time;  //updating previous time at the start of the interrupt routine
-}
-
 ros::Subscriber<sensor_msgs::Joy> sub("joy",&joyCallback);
 
 void setup(){
@@ -79,8 +80,6 @@ void setup(){
   nh.initNode();
   nh.subscribe(sub);
   nh.advertise(check);  //to see whether it is being controlled by joystick or not
-  pinMode(5,INPUT_PULLUP);   //we have to select this pin
-  attachInterrupt(digitalPinToInterrupt(5),isr,FALLING);
 }
 
 void loop(){
@@ -93,7 +92,7 @@ void loop(){
     prev_time=curr_time;
   }
   else if(flag==1){   //only pan is needed in this case so tilt has to be set constant before this is run
-    if(i<max_it){
+    if(it<max_it){
       if(curr_time-prev_time>del1){
         if(state=0){
           servo1.attach(servoPin1);
@@ -101,7 +100,7 @@ void loop(){
         }
         else{
           servo1.detach();
-          i++;
+          it++;
         }
         state=not state;
         prev_time=curr_time;
@@ -113,12 +112,12 @@ void loop(){
         servo1.write(92);
       }
       else{
-        servo1.detach()
+        servo1.detach();
         flag=0;
         prev_time=curr_time;
       }
     }
   }
-  cam_state.data=flag;
+  cam_state.data=bool(flag);
   check.publish(&cam_state);
 }
